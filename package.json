@@ -1,5 +1,5 @@
 {
-  "name": "websockets-chat",
+  "name": "more-tesla-backend",
   "version": "1.0.0",
   "main": "handler.js",
   "scripts": {
@@ -11,6 +11,9 @@
   "description": "",
   "dependencies": {
     "aws-sdk": "^2.404.0",
+    "serverless-dynamodb-client": "^0.0.2",
+    "serverless-dynamodb-local": "^0.2.39",
+    "serverless-offline": "^6.9.0",
     "serverless-websockets-plugin": "^1.0.0"
   }
 }

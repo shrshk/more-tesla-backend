@@ -1,11 +1,13 @@
 'use strict';
 
 const AWS = require('aws-sdk');
-let dynamo = new AWS.DynamoDB.DocumentClient();
+const dynamodb = require('serverless-dynamodb-client');
+
+let dynamo = dynamodb.doc;
 
 require('aws-sdk/clients/apigatewaymanagementapi'); 
 
-const CHATCONNECTION_TABLE = 'chatIdTable';
+const CHATCONNECTION_TABLE = 'TeslaBotTable';
 
 const successfullResponse = {
   statusCode: 200,

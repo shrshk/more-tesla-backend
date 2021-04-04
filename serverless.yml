@@ -26,8 +26,6 @@ provider:
   runtime: nodejs12.x
   lambdaHashingVersion: 20201221
   stage: dev
-  logs:
-    websocket: true
 
   iam:
     role:
@@ -59,11 +57,6 @@ functions:
     events:
       - websocket:
           route: $default
-  sendMessageHandler:
-    handler: handler.sendMessageHandler
-    events:
-      - websocket:
-          route: sendMessage
 
 resources:
   Resources:

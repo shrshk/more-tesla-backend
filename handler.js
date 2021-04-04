@@ -54,10 +54,8 @@ const moreTeslaHandler = async (connectionId, inputMessage) => {
     const { S: authTokenVal } = authToken;
     // TODO: Insert DialogFlow SDK here which calls corresponding tesla SDK method.
     const vehicleInfo = await tesla_sdk.vehicleDetails(authTokenVal);
-    return {
-      vehicleInfo,
-      inputMessage
-    };
+    const { display_name: displayName } = vehicleInfo;
+    return `My name is ${displayName}`;
   } catch (err) {
     console.log("error in moreTeslaHandler" + JSON.stringify(err));
     throw new Error(JSON.stringify(err));

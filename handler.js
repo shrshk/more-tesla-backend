@@ -42,12 +42,14 @@ module.exports.defaultHandler = async (event, context, callback) => {
     callback(null, successfulResponse);
   } catch (err) {
     await send(event, connectionId, JSON.stringify(err));
+    await deleteConnection(connectionId);
     callback(null, JSON.stringify(err));
   }
 };
 
 const moreTeslaHandler = async (connectionId, inputMessage) => {
   try {
+    console.log("input message is : " + inputMessage.toString());
     const connectionObj = await getItemWithConnectionId(connectionId);
     const { Item } = connectionObj;
     const { authToken } = Item;
@@ -60,6 +62,35 @@ const moreTeslaHandler = async (connectionId, inputMessage) => {
     console.log("error in moreTeslaHandler" + JSON.stringify(err));
     throw new Error(JSON.stringify(err));
   }
+}
+
+const authHandler = async (connectionId, inputMessage) => {
+  // temporary authToken needs to be handled by auth lambda
+  const inputJson = JSON.parse(inputMessage);
+  if (inputJson==null || inputJson['authToken'] === undefined)
+    throw new Error('no authToken in the inputJsonMessage');
+
+  const { authToken } = inputJson;
+
+  const connectionObj = await getItemWithConnectionId(connectionId);
+
+  if (JSON.stringify(connectionObj) === '{}') {
+    throw new Error(JSON.stringify("No connection found for: " + connectionId));
+  }
+
+  const params = {
+    TableName: CHAT_CONNECTION_TABLE,
+    Item: {
+      connectionId: {
+        S: connectionId
+      },
+      authToken: {
+        S: authToken
+      }
+    }
+  };
+
+  return await dynamo.putItem(params).promise();
 }
 
 const getItemWithConnectionId = async (connectionId) => {
@@ -89,22 +120,13 @@ const send = async (event, connectionId, data) => {
 };
 
 const addConnection = async (event) => {
-  // temporary authToken needs to be handled by auth lambda
-  const headers = event.headers;
   const connectionId = event.requestContext.connectionId;
-
-  if (headers==null || headers['authToken'] === undefined)
-    throw new Error('no authToken in the header');
-  const authToken = headers['authToken'];
 
   const params = {
     TableName: CHAT_CONNECTION_TABLE,
     Item: {
       connectionId: {
         S: connectionId
-      },
-      authToken: {
-        S: authToken
       }
     }
   };
@@ -126,5 +148,6 @@ const deleteConnection = async (connectionId) => {
 };
 
 const customHandlers = {
-  askTesla: moreTeslaHandler
+  askTesla: moreTeslaHandler,
+  auth: authHandler
 }

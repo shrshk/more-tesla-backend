@@ -33,11 +33,19 @@ module.exports.connectionHandler = async (event, context, callback) => {
 module.exports.defaultHandler = async (event, context, callback) => {
   console.log(JSON.stringify(event));
   const connectionId = event.requestContext.connectionId;
+  const body = JSON.parse(event.body);
+  const inputMessage = body.data;
+  const { action } = body;
+  const connectionObj = await getItemWithConnectionId(connectionId);
+
+  if (JSON.stringify(connectionObj) === '{}') {
+    throw new Error(JSON.stringify("No connection found for: " + connectionId));
+  }
+
+  console.log('connection Obj is: ' + connectionObj.toString())
+
   try {
-    const body = JSON.parse(event.body);
-    const inputMessage = body.data;
-    const { action } = body;
-    const responseData = await customHandlers[action](connectionId, inputMessage);
+    const responseData = await customHandlers[action](connectionObj, inputMessage);
     await send(event, connectionId, responseData);
     callback(null, successfulResponse);
   } catch (err) {
@@ -47,10 +55,9 @@ module.exports.defaultHandler = async (event, context, callback) => {
   }
 };
 
-const moreTeslaHandler = async (connectionId, inputMessage) => {
+const moreTeslaHandler = async (connectionObj, inputMessage) => {
   try {
     console.log("input message is : " + inputMessage.toString());
-    const connectionObj = await getItemWithConnectionId(connectionId);
     const { Item } = connectionObj;
     const { authToken } = Item;
     const { S: authTokenVal } = authToken;
@@ -64,25 +71,23 @@ const moreTeslaHandler = async (connectionId, inputMessage) => {
   }
 }
 
-const authHandler = async (connectionId, inputMessage) => {
+const authHandler = async (connectionObj, inputMessage) => {
   // temporary authToken needs to be handled by auth lambda
-  const inputJson = JSON.parse(inputMessage);
-  if (inputJson==null || inputJson['authToken'] === undefined)
+  console.log('input message in authHandler' + inputMessage);
+  if (inputMessage==null || inputMessage['authToken'] === undefined)
     throw new Error('no authToken in the inputJsonMessage');
 
-  const { authToken } = inputJson;
+  const { authToken } = inputMessage;
 
-  const connectionObj = await getItemWithConnectionId(connectionId);
-
-  if (JSON.stringify(connectionObj) === '{}') {
-    throw new Error(JSON.stringify("No connection found for: " + connectionId));
-  }
+  const { Item } = connectionObj;
+  const { connectionId } = Item;
+  const { S: connectionIdVal } = connectionId;
 
   const params = {
     TableName: CHAT_CONNECTION_TABLE,
     Item: {
       connectionId: {
-        S: connectionId
+        S: connectionIdVal
       },
       authToken: {
         S: authToken
